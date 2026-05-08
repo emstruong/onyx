@@ -177,11 +177,36 @@ public class MainFrame extends JFrame implements ActionListener, KeyListener,
 		super(WelcomeFrame.OMEGA + "nyx");
 		//super.setFont(new Font("MS Mincho",Font.PLAIN, 12));
 
-		// set look and feel of operating system
+		// Set look and feel.
+		// On Linux, the system L&F (GTK) inherits the user's GNOME theme, which
+		// can render Onyx unreadable when a dark theme is active because parts of
+		// the UI use hardcoded light colors. We therefore default to a
+		// cross-platform L&F on Linux. Other OSes keep the system L&F.
+		// Users can override via -Donyx.laf=system|nimbus|metal|<fully.qualified.ClassName>.
 		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			String requested = System.getProperty("onyx.laf");
+			String lafClass;
+			if (requested != null && !requested.isEmpty()) {
+				switch (requested.toLowerCase()) {
+					case "system": lafClass = UIManager.getSystemLookAndFeelClassName(); break;
+					case "nimbus": lafClass = "javax.swing.plaf.nimbus.NimbusLookAndFeel"; break;
+					case "metal":  lafClass = UIManager.getCrossPlatformLookAndFeelClassName(); break;
+					default:       lafClass = requested; // treat as class name
+				}
+			} else {
+				String os = System.getProperty("os.name", "").toLowerCase();
+				if (os.contains("linux") || os.contains("nix") || os.contains("nux")) {
+					lafClass = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
+				} else {
+					lafClass = UIManager.getSystemLookAndFeelClassName();
+				}
+			}
+			UIManager.setLookAndFeel(lafClass);
 		} catch (Exception e) {
 			e.printStackTrace();
+			try {
+				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+			} catch (Exception ignored) {}
 		}
 		
 		this.addFocusListener(this);
