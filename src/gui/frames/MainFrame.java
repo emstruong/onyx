@@ -208,7 +208,31 @@ public class MainFrame extends JFrame implements ActionListener, KeyListener,
 				UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
 			} catch (Exception ignored) {}
 		}
-		
+
+		// Apply font size to the L&F's defaults. Override via -Donyx.fontSize=14.
+		// Default scales a 12pt base by the screen DPI so fonts respect the OS
+		// scaling on HiDPI displays (the cross-platform L&F otherwise renders
+		// uncomfortably small text on high-DPI Linux desktops).
+		try {
+			String requestedFs = System.getProperty("onyx.fontSize");
+			int fontSize;
+			if (requestedFs != null && !requestedFs.isEmpty()) {
+				fontSize = Integer.parseInt(requestedFs);
+			} else {
+				int dpi = java.awt.Toolkit.getDefaultToolkit().getScreenResolution();
+				fontSize = Math.max(11, Math.round(12f * dpi / 96f));
+			}
+			for (Object key : new java.util.ArrayList<>(UIManager.getDefaults().keySet())) {
+				Object value = UIManager.get(key);
+				if (value instanceof javax.swing.plaf.FontUIResource) {
+					javax.swing.plaf.FontUIResource f = (javax.swing.plaf.FontUIResource) value;
+					UIManager.put(key, new javax.swing.plaf.FontUIResource(f.getName(), f.getStyle(), fontSize));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		this.addFocusListener(this);
 		
 		this.setApplicationIcons();

@@ -1,2 +1,4 @@
 bin/
 build/
+build.num
+dist/onyx.jar
